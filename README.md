@@ -1,17 +1,13 @@
-# Nome do projeto
-Escreva um ou dois  parágrafo resumindo o objetivo do seu projeto.
+# Trabalho prático - Locadora de Veículos
+O projeto tem como objetivo incentivar os alunos a aprenderem conceitos de backend que foram abordados de forma precária nas aulas assíncronas. Utilizando C# 6.0 (ou superior), Entity Framework, SQL Express e Swagger, os alunos desenvolverão um sistema de locadora de veículos. As etapas incluem a modelagem do banco de dados, a implementação do backend com APIs RESTful, testes utilizando Swagger para documentação e a criação de um vídeo no estilo de "pitch".
 
 ## Alunos integrantes da equipe
 
-* Nome completo do aluno 1
-* Nome completo do aluno 2
-* Nome completo do aluno 3
-* Nome completo do aluno 4
+* Artur Marcos da Silva
 
 ## Professores responsáveis
 
-* Nome completo do professor 1
-* Nome completo do professor 2
+* Leonardo Vilela Cardoso
 
 ## Instruções de utilização
 
