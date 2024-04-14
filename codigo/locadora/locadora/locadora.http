@@ -1,0 +1,6 @@
+@locadora_HostAddress = http://localhost:5190
+
+GET {{locadora_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
