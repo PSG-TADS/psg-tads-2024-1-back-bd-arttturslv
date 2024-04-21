@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\build\locadora.props" />
+</Project>

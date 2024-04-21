@@ -10,8 +10,8 @@ namespace locadora.Models
         public string? Modelo { get; set; }
         public string? Marca { get; set; }
         public int Ano { get; set; }
-        public double Preco { get; set; }
-
+        public double PrecoDiario { get; set; }
+        public double AdicionalPrecoAtrasoDiario { get; set; } //quando atrasarem a entrega do carro
         public bool Disponibilidade { get; set; }
     }
 }

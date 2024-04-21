@@ -1,3 +1,5 @@
+using locadora.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace locadora
 {
@@ -7,16 +9,13 @@ namespace locadora
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-
+            ConfigureServices(builder.Services);
             builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -27,10 +26,20 @@ namespace locadora
 
             app.UseAuthorization();
 
-
             app.MapControllers();
 
+            
+
             app.Run();
+        }
+
+        private static void ConfigureServices(IServiceCollection services)
+        {
+            services.AddDbContext<ApplicationContext>(options =>
+                options.UseSqlServer(@"Server=localhost\SQLEXPRESS;Database=locadoraDB;Trusted_Connection=True;TrustServerCertificate=True;"));
+
+            services.AddAuthorization(); 
+
         }
     }
 }
