@@ -36,7 +36,7 @@ namespace locadora.Controllers
 
             if (veiculo == null)
             {
-                return NotFound();
+                return NotFound("O placa digitada não pertence a nenhum veiculo.");
             }
 
             return veiculo;
@@ -70,7 +70,7 @@ namespace locadora.Controllers
 
             if(!placaValida(veiculo.PlacaID))
             {
-                return BadRequest("A placa deve seguir o padrão utilizar apenas letras e numeros, no formato 4 letras e 3 numeros ou 4 numeros e 3 letras.");
+                return BadRequest("A placa deve seguir o padrão utilizar apenas letras e numeros, com 7 digitos.");
             }
 
             _context.Entry(veiculo).State = EntityState.Modified;
@@ -91,7 +91,7 @@ namespace locadora.Controllers
                 }
             }
 
-            return NoContent();
+            return Ok("Veiculo modificado.");
         }
 
         // POST: api/Veiculos
@@ -134,10 +134,15 @@ namespace locadora.Controllers
                 return NotFound();
             }
 
+            if(veiculo.Disponibilidade==false)
+            {
+                return BadRequest("Informações do veiculo não podem ser deletadas, pois ele está alugado.");
+            }
+
             _context.Veiculo.Remove(veiculo);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return Ok("Veiculo foi apagado.");
         }
 
         private bool VeiculoExists(string id)

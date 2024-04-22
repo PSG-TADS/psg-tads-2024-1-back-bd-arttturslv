@@ -21,14 +21,14 @@ namespace locadora.Controllers
             _context = context;
         }
 
-        // GET: api/Clientes
+        // GET: api/Clientes - Retorna todos os clientes
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Cliente>>> GetCliente()
         {
             return await _context.Cliente.ToListAsync();
         }
 
-        // GET: api/Clientes/5
+        // GET: api/Clientes/5 - Retorna o cliente especifico ou NotFound
         [HttpGet("{id}")]
         public async Task<ActionResult<Cliente>> GetCliente(string id)
         {
@@ -36,13 +36,16 @@ namespace locadora.Controllers
 
             if (cliente == null)
             {
-                return NotFound();
+                return NotFound("O cliente não foi encontrado, verifique o CPF informado.");
             }
 
             return cliente;
         }
 
-        // GET: api/Clientes/atrasos
+        
+
+
+        // GET: api/Clientes/atrasos - Retorna todos os clientes com locacoes em atraso.
         [HttpGet("atrasos")]
         public async Task<ActionResult<IEnumerable<Cliente>>> GetClientesAtrasados()
         {
@@ -53,7 +56,7 @@ namespace locadora.Controllers
             {
                 foreach(var locacao in cliente.Locacoes)
                 {
-                    if(locacao.DataInicio < locacao.DataDevolucao)
+                    if((locacao.DataInicio < locacao.DataDevolucao) && locacao.Status == true)
                     {
                         clientesAtrasados.Add(cliente);
                         break;
@@ -63,20 +66,13 @@ namespace locadora.Controllers
             return clientesAtrasados;
         }
 
-        // PUT: api/Clientes/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        // PUT: api/Clientes/5 - Modifica clientes
         [HttpPut("{id}")]
         public async Task<IActionResult> PutCliente(string id, Cliente cliente)
         {
             if (id != cliente.CPF)
             {
-                return BadRequest("O CPF informado nos parametros é diferente do informado no corpo da requisição.");
-            }
-
-            if (!CPFValido(cliente.CPF))
-            {
-                return BadRequest("CPF é invalido.");
-
+                return BadRequest("Não é possivel modificar o CPF.");
             }
             else if (!numeroValido(cliente.Telefone))
             {
@@ -111,7 +107,7 @@ namespace locadora.Controllers
                 }
             }
 
-            return NoContent();
+            return Ok("Cliente modificado.");
         }
 
         // POST: api/Clientes
@@ -168,10 +164,19 @@ namespace locadora.Controllers
                 return NotFound();
             }
 
+            foreach (var locacao in cliente.Locacoes)
+            {
+                if(locacao.Status==true)
+                {
+                    return BadRequest("Não é possivel apagar dados do cliente, pois ele possui uma ou mais locações ativas.");
+                }
+            }
+
+            _context.Locacao.RemoveRange(cliente.Locacoes);
             _context.Cliente.Remove(cliente);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return Ok("Cliente foi apagado, junto com todas as locações relacionadas a ele.");
         }
 
 
@@ -247,8 +252,4 @@ namespace locadora.Controllers
 
             return false;
         }
-
-
-
-    }
 }
