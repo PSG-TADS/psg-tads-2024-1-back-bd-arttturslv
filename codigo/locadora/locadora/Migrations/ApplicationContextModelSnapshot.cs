@@ -28,12 +28,15 @@ namespace locadora.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Email")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Nome")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Telefone")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("CPF");
@@ -45,6 +48,9 @@ namespace locadora.Migrations
                 {
                     b.Property<string>("LocacaoID")
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("Ativa")
+                        .HasColumnType("bit");
 
                     b.Property<string>("ClienteID")
                         .IsRequired()
@@ -69,9 +75,6 @@ namespace locadora.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool?>("Status")
-                        .HasColumnType("bit");
-
                     b.HasKey("LocacaoID");
 
                     b.HasIndex("ClienteID");
@@ -84,9 +87,6 @@ namespace locadora.Migrations
                     b.Property<string>("PlacaID")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<double>("AdicionalPrecoAtrasoDiario")
-                        .HasColumnType("float");
-
                     b.Property<int>("Ano")
                         .HasColumnType("int");
 
@@ -94,10 +94,15 @@ namespace locadora.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("Marca")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Modelo")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("PrecoAtrasoDiario")
+                        .HasColumnType("float");
 
                     b.Property<double>("PrecoDiario")
                         .HasColumnType("float");

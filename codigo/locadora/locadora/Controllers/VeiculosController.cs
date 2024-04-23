@@ -21,14 +21,14 @@ namespace locadora.Controllers
             _context = context;
         }
 
-        // GET: api/Veiculos
+        // GET: api/Veiculos - Retorna todos os veiculos
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Veiculo>>> GetVeiculo()
         {
             return await _context.Veiculo.ToListAsync();
         }
 
-        // GET: api/Veiculos/5
+        // GET: api/Veiculos/5 - Retorna o veiculo especifico ou NotFound
         [HttpGet("{id}")]
         public async Task<ActionResult<Veiculo>> GetVeiculo(string id)
         {
@@ -41,7 +41,8 @@ namespace locadora.Controllers
 
             return veiculo;
         }
-        //GET: api/Veiculos/disponiveis
+
+        //GET: api/Veiculos/disponiveis - Retorna todos os veiculos disponiveis
         [HttpGet("disponiveis")]
         public async Task<ActionResult<IEnumerable<Veiculo>>> GetVeiculosDisponiveis()
         {
@@ -58,8 +59,7 @@ namespace locadora.Controllers
             return veiculosDisponiveis;
         }
 
-        // PUT: api/Veiculos/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        // PUT: api/Veiculos/5 - Permite modificar o veiculo
         [HttpPut("{id}")]
         public async Task<IActionResult> PutVeiculo(string id, Veiculo veiculo)
         {
@@ -94,8 +94,7 @@ namespace locadora.Controllers
             return Ok("Veiculo modificado.");
         }
 
-        // POST: api/Veiculos
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        // POST: api/Veiculos - Permite adicionar um novo veiculo
         [HttpPost]
         public async Task<ActionResult<Veiculo>> PostVeiculo(Veiculo veiculo)
         {
@@ -124,7 +123,7 @@ namespace locadora.Controllers
             return CreatedAtAction("GetVeiculo", new { id = veiculo.PlacaID }, veiculo);
         }
 
-        // DELETE: api/Veiculos/5
+        // DELETE: api/Veiculos/5 - Permite deletar um veiculo
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteVeiculo(string id)
         {
