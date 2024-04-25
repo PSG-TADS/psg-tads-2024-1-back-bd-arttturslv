@@ -21,14 +21,14 @@ namespace locadora.Controllers
             _context = context;
         }
 
-        // GET: api/Veiculos
+        // GET: api/Veiculos - Retorna todos os veiculos
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Veiculo>>> GetVeiculo()
         {
             return await _context.Veiculo.ToListAsync();
         }
 
-        // GET: api/Veiculos/5
+        // GET: api/Veiculos/5 - Retorna o veiculo especifico ou NotFound
         [HttpGet("{id}")]
         public async Task<ActionResult<Veiculo>> GetVeiculo(string id)
         {
@@ -36,12 +36,13 @@ namespace locadora.Controllers
 
             if (veiculo == null)
             {
-                return NotFound();
+                return NotFound("O placa digitada não pertence a nenhum veiculo.");
             }
 
             return veiculo;
         }
-        //GET: api/Veiculos/disponiveis
+
+        //GET: api/Veiculos/disponiveis - Retorna todos os veiculos disponiveis
         [HttpGet("disponiveis")]
         public async Task<ActionResult<IEnumerable<Veiculo>>> GetVeiculosDisponiveis()
         {
@@ -58,8 +59,7 @@ namespace locadora.Controllers
             return veiculosDisponiveis;
         }
 
-        // PUT: api/Veiculos/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        // PUT: api/Veiculos/5 - Permite modificar o veiculo
         [HttpPut("{id}")]
         public async Task<IActionResult> PutVeiculo(string id, Veiculo veiculo)
         {
@@ -70,7 +70,7 @@ namespace locadora.Controllers
 
             if(!placaValida(veiculo.PlacaID))
             {
-                return BadRequest("A placa deve seguir o padrão utilizar apenas letras e numeros, no formato 4 letras e 3 numeros ou 4 numeros e 3 letras.");
+                return BadRequest("A placa deve seguir o padrão utilizar apenas letras e numeros, com 7 digitos.");
             }
 
             _context.Entry(veiculo).State = EntityState.Modified;
@@ -91,11 +91,10 @@ namespace locadora.Controllers
                 }
             }
 
-            return NoContent();
+            return Ok("Veiculo modificado.");
         }
 
-        // POST: api/Veiculos
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        // POST: api/Veiculos - Permite adicionar um novo veiculo
         [HttpPost]
         public async Task<ActionResult<Veiculo>> PostVeiculo(Veiculo veiculo)
         {
@@ -121,10 +120,10 @@ namespace locadora.Controllers
                 }
             }
 
-            return CreatedAtAction("GetVeiculo", new { id = veiculo.PlacaID }, veiculo);
+            return CreatedAtAction("GetVeiculo", new { id = veiculo.PlacaID }, "Veiculo adicionado. Devido regras de negocio, a disponibilidade do veiculo foi configurada para 'true'.");
         }
 
-        // DELETE: api/Veiculos/5
+        // DELETE: api/Veiculos/5 - Permite deletar um veiculo
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteVeiculo(string id)
         {
@@ -134,10 +133,15 @@ namespace locadora.Controllers
                 return NotFound();
             }
 
+            if(veiculo.Disponibilidade==false)
+            {
+                return BadRequest("Informações do veiculo não podem ser deletadas, pois ele está alugado.");
+            }
+
             _context.Veiculo.Remove(veiculo);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return Ok("Veiculo foi apagado.");
         }
 
         private bool VeiculoExists(string id)

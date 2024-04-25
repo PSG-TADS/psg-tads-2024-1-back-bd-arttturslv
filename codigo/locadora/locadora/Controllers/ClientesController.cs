@@ -21,14 +21,14 @@ namespace locadora.Controllers
             _context = context;
         }
 
-        // GET: api/Clientes
+        // GET: api/Clientes - Retorna todos os clientes
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Cliente>>> GetCliente()
         {
-            return await _context.Cliente.ToListAsync();
+            return await _context.Cliente.Include(c => c.Locacoes).ToListAsync();
         }
 
-        // GET: api/Clientes/5
+        // GET: api/Clientes/5 - Retorna o cliente especifico ou NotFound
         [HttpGet("{id}")]
         public async Task<ActionResult<Cliente>> GetCliente(string id)
         {
@@ -36,62 +36,38 @@ namespace locadora.Controllers
 
             if (cliente == null)
             {
-                return NotFound();
+                return NotFound("O cliente não foi encontrado, verifique o CPF informado.");
             }
 
             return cliente;
         }
 
-        // GET: api/Clientes/atrasos
-        [HttpGet("atrasos")]
-        public async Task<ActionResult<IEnumerable<Cliente>>> GetClientesAtrasados()
-        {
-            var clientes = _context.Cliente.ToListAsync();
-            var clientesAtrasados = new List<Cliente>();
-
-            foreach (var cliente in await clientes)
-            {
-                foreach(var locacao in cliente.Locacoes)
-                {
-                    if(locacao.DataInicio < locacao.DataDevolucao)
-                    {
-                        clientesAtrasados.Add(cliente);
-                        break;
-                    }
-                }
-            }
-            return clientesAtrasados;
-        }
-
-        // PUT: api/Clientes/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        // PUT: api/Clientes/5 - Modifica clientes
         [HttpPut("{id}")]
         public async Task<IActionResult> PutCliente(string id, Cliente cliente)
         {
+            cliente.CPF = formatarNumeros(cliente.CPF);
+            cliente.Telefone = formatarNumeros(cliente.Telefone);
+
             if (id != cliente.CPF)
             {
-                return BadRequest("O CPF informado nos parametros é diferente do informado no corpo da requisição.");
-            }
-
-            if (!CPFValido(cliente.CPF))
-            {
-                return BadRequest("CPF é invalido.");
-
+                return BadRequest("Não é possivel modificar o CPF.");
             }
             else if (!numeroValido(cliente.Telefone))
             {
-                return BadRequest("Numero de telefone é invalido.");
-
+                return BadRequest("Numero de telefone é invalido. Utilize o padrão com DDD [abcd-mcdu] (fixo) ou DDD [abcde-mcdu] (telefone movel)");
             }
             else if (!emailValido(cliente.Email))
             {
-                return BadRequest("O email é invalido.");
-
+                return BadRequest("O email é invalido. Utilize o padrão com 'nome@operador.com'.");
             }
             else if (!nomeValido(cliente.Nome))
             {
-                return BadRequest("O nome é invalido.");
+                return BadRequest("O nome é invalido. O nome não pode conter caracteres especiais.");
             }
+
+            var locacoesAnteriores = await _context.Locacao.Where(l => l.ClienteID == cliente.CPF).ToListAsync();
+            cliente.Locacoes = locacoesAnteriores;
 
             _context.Entry(cliente).State = EntityState.Modified;
 
@@ -111,30 +87,32 @@ namespace locadora.Controllers
                 }
             }
 
-            return NoContent();
+            return Ok("Cliente modificado. Atenção, devido as regras de negocio, não é possivel modificar as locações pelo cliente.");
         }
 
-        // POST: api/Clientes
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        // POST: api/Clientes - Permite adicionar um novo cliente
         [HttpPost]
         public async Task<ActionResult<Cliente>> PostCliente(Cliente cliente)
         {
+            cliente.CPF = formatarNumeros(cliente.CPF);
+            cliente.Telefone = formatarNumeros(cliente.Telefone);
+            cliente.Locacoes = new List<Locacao>();
 
-            if(!CPFValido(cliente.CPF))
+            if (!CPFValido(cliente.CPF))
             {
-                return BadRequest("CPF é invalido.");
-
-            } else if (!numeroValido(cliente.Telefone))
+                return BadRequest("CPF invalido. Verifique a quantidade de algarismos.");
+            }
+            else if (!numeroValido(cliente.Telefone))
             {
-                return BadRequest("Numero de telefone é invalido.");
-
-            } else if (!emailValido(cliente.Email))
+                return BadRequest("Numero de telefone é invalido. Utilize o padrão com DDD [abcd-mcdu] (fixo) ou DDD [abcde-mcdu] (telefone movel)");
+            }
+            else if (!emailValido(cliente.Email))
             {
-                return BadRequest("O email é invalido.");
-
-            } else if (!nomeValido(cliente.Nome))
+                return BadRequest("O email é invalido. Utilize o padrão com 'nome@operador.com'.");
+            }
+            else if (!nomeValido(cliente.Nome))
             {
-                return BadRequest("O nome é invalido.");
+                return BadRequest("O nome é invalido. O nome não pode conter caracteres especiais.");
             }
 
             _context.Cliente.Add(cliente);
@@ -154,11 +132,12 @@ namespace locadora.Controllers
                 }
             }
 
-            return CreatedAtAction("GetCliente", new { id = cliente.CPF }, cliente);
+            return CreatedAtAction("GetCliente", new { id = cliente.CPF }, $"Cliente criado com sucesso. Devido às regras de negócio, as locações foram salvas vazias e só poderão ser preenchidas no endpoint de alugar.\n\nDetalhes do Cliente:\nNome: {cliente.Nome}\nCPF: {cliente.CPF}\nEmail: {cliente.Email}\nTelefone: {cliente.Telefone}\nLocações: []");
+
         }
 
-        
-        // DELETE: api/Clientes/5
+
+        // DELETE: api/Clientes/5 - Permite deletar um cliente
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCliente(string id)
         {
@@ -168,10 +147,22 @@ namespace locadora.Controllers
                 return NotFound();
             }
 
+            if(cliente.Locacoes != null)
+            {
+                foreach (var locacao in cliente.Locacoes)
+                {
+                    if (locacao.Ativa == true)
+                    {
+                        return BadRequest("Não é possivel apagar dados do cliente, pois ele possui uma ou mais locações ativas.");
+                    }
+                }
+                _context.Locacao.RemoveRange(cliente.Locacoes);
+            }
+
             _context.Cliente.Remove(cliente);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return Ok("Cliente foi apagado, junto com todas as locações relacionadas a ele.");
         }
 
 
@@ -184,36 +175,21 @@ namespace locadora.Controllers
 
         private bool CPFValido(string CPF)
         {
-            string newCPF = CPF.Replace(".", "");
-            newCPF = CPF.Replace("-", "");
-            Regex apenasNumeros = new Regex("^[0-9]+$");
-
             if (CPF.Length != 11)
             {
                 return false;
             }
-
-            if (!apenasNumeros.IsMatch(CPF))
-            {
-                return false;
-            }
-
             return true;
         }
 
-        private bool numeroValido (string numero)
+        private string formatarNumeros(string ex)
         {
-            string newNumero = numero.Replace("(", "");
-            newNumero = numero.Replace(")", "");
-            newNumero = numero.Replace("-", "");
-            newNumero = numero.Replace(" ", "");
-            Regex contemLetras = new Regex("[a-zA-Z]");
+            string apenasNumeros = Regex.Replace(ex, @"[^\d\-.]", "");
+            return apenasNumeros;
+        }
 
-            if (contemLetras.IsMatch(numero))
-            {
-                return false;
-            }
-
+        private bool numeroValido(string numero)
+        {
             if (numero.Length == 11 || numero.Length == 10) // Padrao com DDD [abcd-mcdu] (fixo) ou DDD [abcde-mcdu] (telefone movel)
             {
                 return true;
@@ -247,8 +223,5 @@ namespace locadora.Controllers
 
             return false;
         }
-
-
-
     }
 }

@@ -11,4 +11,7 @@ O projeto tem como objetivo incentivar os alunos a aprenderem conceitos de backe
 
 ## Instruções de utilização
 
-Assim que a primeira versão do sistema estiver disponível, deverá complementar com as instruções de utilização. Descreva como instalar eventuais dependências e como executar a aplicação.
+- Abrir o projeto no Visual Studio Community.
+- Clicar `Ctrl + F5`.
+- Utilizar o Swagger para fazer as requisições.
+

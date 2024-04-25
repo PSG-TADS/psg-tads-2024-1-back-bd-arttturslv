@@ -21,14 +21,14 @@ namespace locadora.Controllers
             _context = context;
         }
 
-        // GET: api/Locacoes
+        // GET: api/Locacoes - Retorna todas as locações
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Locacao>>> GetLocacao()
         {
             return await _context.Locacao.ToListAsync();
         }
 
-        // GET: api/Locacoes/5
+        // GET: api/Locacoes/5 - Retorna a locacao especifica ou NotFound
         [HttpGet("{id}")]
         public async Task<ActionResult<Locacao>> GetLocacao(string id)
         {
@@ -41,6 +41,7 @@ namespace locadora.Controllers
             return locacao;
         }
 
+        // GET: api/Locacoes/ativas - Retorna todas as locações que estao ativas
         [HttpGet("ativas")]
         public async Task<ActionResult<IEnumerable<Locacao>>> GetLocacoesAtivas()
         {
@@ -49,7 +50,7 @@ namespace locadora.Controllers
 
             foreach (var locacao in await locacoes)
             {
-                if(locacao.Status.HasValue && locacao.Status.Value)
+                if(locacao.Ativa)
                 {
                     locacoesAtivas.Add(locacao);
                 }
@@ -57,7 +58,25 @@ namespace locadora.Controllers
             return locacoesAtivas;
         }
 
-        // PUT: api/Locacoes/devolver/5
+        // GET: api/Locacoes/nao-ativas - Retorna todas as locações que estao não estao ativas
+        [HttpGet("nao-ativas")]
+        public async Task<ActionResult<IEnumerable<Locacao>>> GetLocacoesNaoAtivas()
+        {
+            var locacoes = _context.Locacao.ToListAsync();
+            var locacoesNaoAtivas = new List<Locacao>();
+
+            foreach (var locacao in await locacoes)
+            {
+                if (!locacao.Ativa)
+                {
+                    locacoesNaoAtivas.Add(locacao);
+                }
+            }
+            return locacoesNaoAtivas;
+        }
+
+
+        // PUT: api/Locacoes/devolver/5 - Usado para devolver um veiculo
         [HttpPut("devolver/{id}")]
         public async Task<ActionResult<Locacao>> DevolverVeiculo(string id, DateTime dataDevolucao)
         {
@@ -66,42 +85,36 @@ namespace locadora.Controllers
             if (locacao == null)
             {
                 return NotFound("Locação não encontrada.");
-            }
-
-            if (locacao.Status == false)
+            } 
+            else if (locacao.Ativa == false)
             {
                 return BadRequest("Esta locação já foi devolvida.");
             }
-
-            if (!dataValida(dataDevolucao))
+            else if (!dataValida(dataDevolucao))
             {
                 return BadRequest("A data de devolução deve ser fornecida no formato 'yyyy-MM-dd'.");
             }
-
-            if (locacao.DataInicio > dataDevolucao)
+            else if (locacao.DataInicio > dataDevolucao)
             {
-                return BadRequest("A data de inicio não pode ser mais recente que a data de devolucao");
+                return BadRequest("A data de inicio não pode ser mais recente que a data de devolução.");
             }
 
             var veiculo = await _context.Veiculo.FindAsync(locacao.PlacaID);
 
-            if (veiculo != null)
-            {
-                veiculo.Disponibilidade = true;
-            }
+            int tempoPassado = (locacao.DataTermino.Subtract(locacao.DataInicio)).Days;
+            int atraso = (dataDevolucao.Subtract(locacao.DataTermino)).Days;
 
-            TimeSpan tempoPassado = locacao.DataTermino.Subtract(locacao.DataInicio);
-            TimeSpan atraso = dataDevolucao.Subtract(locacao.DataTermino);
-
-            double custo = veiculo.PrecoDiario * tempoPassado.Days;
-            double custoAtraso = veiculo.AdicionalPrecoAtrasoDiario * atraso.Days;
+            double custo = veiculo.PrecoDiario * tempoPassado;
+            double custoAtraso = veiculo.PrecoAtrasoDiario * atraso;
             double custoTotal = custo + custoAtraso;
+
+            veiculo.Disponibilidade = true; //atualiza a disponibilidade, agora que a alocacao acabou
 
             locacao.DataDevolucao = dataDevolucao;
             locacao.Custo = custoTotal;
-            locacao.Status = false;
-            locacao.Descricao = "O veiculo foi entregue com "+atraso+" dias de atraso e "+tempoPassado+" dias estipulados no contrato. O custo total é de R$"+custo+" pelos dias do contrato e mais R$"+custoAtraso+" pelo atraso, totalizando R$"+custoTotal;
-            veiculo.Disponibilidade = true; //veiculo volta a estar disponivel
+            locacao.Ativa = false; //agora a locacao fica como concluida
+
+            locacao.Descricao += "O veiculo foi entregue com "+atraso+" dias de atraso e "+tempoPassado+" dias estipulados no contrato. O custo total é de R$"+custo+" pelos dias do contrato e mais R$"+custoAtraso+" pelo atraso, totalizando R$"+custoTotal;
             try
             {
                 await _context.SaveChangesAsync();
@@ -132,34 +145,32 @@ namespace locadora.Controllers
 
             if (!dataValida(locacao.DataInicio) || !dataValida(locacao.DataTermino))
             {
-                return BadRequest("As datas devem ser fornecidas no formato 'yyyy-MM-ddT00:00:00Z'.");
+                return BadRequest("As datas devem ser fornecidas no formato 'yyyy-MM-dd");
             }
-
-            if (locacao.DataInicio < locacao.DataTermino)
+            else if (locacao.DataInicio > locacao.DataTermino)
             {
-                return BadRequest("A data de termino não pode ser mais recente que a data de inicio");
+                return BadRequest("A data de inicio não pode ser mais recente que a data de termino.");
             }
-
-            if (clienteExistente == null)
+            else if (clienteExistente == null)
             {
                 return BadRequest("O cliente não existe.");
             }
-
-            if (veiculoExistente == null)
+            else if (veiculoExistente == null)
             {
                 return BadRequest("O veiculo não existe.");
             }
-
-            if (veiculoExistente.Disponibilidade == false)
+            else if (veiculoExistente.Disponibilidade == false)
             {
-                return BadRequest("O veiculo não está disponivel. Ele já foi alugado.");
+                return BadRequest("O veiculo não está disponivel.");
             }
 
             locacao.DataDevolucao = null; //a devolucao deve ser nula até que o veiculo seja devolvido
             locacao.Custo = 0; //o custo é calculado apos a devolucao
-            locacao.Status = true; //o status é atualizado apos a devolucao
-            locacao.Descricao = ""; //o status é atualizado apos a devolucao
+            locacao.Ativa = true; //o status é atualizado apos a devolucao
+            locacao.Descricao = "A locacao foi feita para o cliente: " + clienteExistente.Nome + " com duração de " + (locacao.DataTermino.Subtract(locacao.DataInicio)).Days + " dias."; 
             veiculoExistente.Disponibilidade = false; //atualiza o veiculo, nao deixando ser usado.
+            
+            clienteExistente.Locacoes.Add(locacao);
 
             _context.Locacao.Add(locacao);
             try
@@ -178,7 +189,7 @@ namespace locadora.Controllers
                 }
             }
 
-            return CreatedAtAction("GetLocacao", new { id = locacao.LocacaoID }, locacao);
+            return CreatedAtAction("GetLocacao", new { id = locacao.LocacaoID }, "Locação criada com sucesso! Devido as regras de negocio, as propriedades DataDevolucao, Custo, Ativa e Descrição foram atualizas com os valores padrão.");
         }
 
         // DELETE: api/Locacoes/5
@@ -190,11 +201,18 @@ namespace locadora.Controllers
             {
                 return NotFound();
             }
+            if(locacao.Ativa == true)
+            {
+                return BadRequest("A locação está ativa e portanto não pode ser apagada.");
+            }
+
+            var veiculoExistente = await _context.Veiculo.FindAsync(locacao.PlacaID);
+            veiculoExistente.Disponibilidade = true;
 
             _context.Locacao.Remove(locacao);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return Ok("A locação foi apagada com sucesso.");
         }
 
         private bool LocacaoExists(string id)
@@ -207,91 +225,3 @@ namespace locadora.Controllers
         }
     }
 }
-
-/*
-
-        // PUT: api/Locacoes/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutLocacao(string id, Locacao locacao)
-        {
-            if (id != locacao.LocacaoID)
-            {
-                return BadRequest("O id informado nos parametros é diferente do informado no corpo da requisição.");
-            }
-
-            _context.Entry(locacao).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!LocacaoExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
-        } 
-
-   [HttpPost]
-        public async Task<ActionResult<Locacao>> PostLocacao(Locacao locacao)
-        {
-            var clienteExistente = await _context.Cliente.FindAsync(locacao.ClienteID);
-            var veiculoExistente = await _context.Veiculo.FindAsync(locacao.PlacaID);
-
-            if (!dataValida(locacao.DataInicio) || !dataValida(locacao.DataTermino))
-            {
-                return BadRequest("As datas devem ser fornecidas no formato 'yyyy-MM-ddT00:00:00Z'.");
-            }
-
-            if (clienteExistente == null)
-            {
-                return BadRequest("O cliente não existe.");
-            }
-
-            if (veiculoExistente == null)
-            {
-                return BadRequest("O veiculo não existe.");
-            }
-
-            if (veiculoExistente.Disponibilidade == false)
-            {
-                return BadRequest("O veiculo não está disponivel. Ele já foi alugado.");
-            }
-
-            locacao.DataDevolucao = null; //a devolucao deve ser nula até que o veiculo seja devolvido
-            locacao.Custo = 0; //o custo é calculado apos a devolucao
-            locacao.Status = true; //o status é atualizado apos a devolucao
-            locacao.Descricao = ""; //o status é atualizado apos a devolucao
-            veiculoExistente.Disponibilidade = false; //atualiza o veiculo, nao deixando ser usado.
-
-            _context.Locacao.Add(locacao);
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateException)
-            {
-                if (LocacaoExists(locacao.LocacaoID))
-                {
-                    return Conflict();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return CreatedAtAction("GetLocacao", new { id = locacao.LocacaoID }, locacao);
-        }
-
- 
- */

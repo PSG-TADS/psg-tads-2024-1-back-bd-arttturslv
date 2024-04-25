@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace locadora.Migrations
 {
     /// <inheritdoc />
-    public partial class locadoraDBart : Migration
+    public partial class locadoraBDart : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -16,9 +16,9 @@ namespace locadora.Migrations
                 columns: table => new
                 {
                     CPF = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Nome = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Telefone = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Email = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Nome = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Telefone = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -30,11 +30,11 @@ namespace locadora.Migrations
                 columns: table => new
                 {
                     PlacaID = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Modelo = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Marca = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Modelo = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Marca = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Ano = table.Column<int>(type: "int", nullable: false),
                     PrecoDiario = table.Column<double>(type: "float", nullable: false),
-                    AdicionalPrecoAtrasoDiario = table.Column<double>(type: "float", nullable: false),
+                    PrecoAtrasoDiario = table.Column<double>(type: "float", nullable: false),
                     Disponibilidade = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
@@ -53,7 +53,7 @@ namespace locadora.Migrations
                     DataTermino = table.Column<DateTime>(type: "datetime2", nullable: false),
                     DataDevolucao = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Custo = table.Column<double>(type: "float", nullable: true),
-                    Status = table.Column<bool>(type: "bit", nullable: true),
+                    Ativa = table.Column<bool>(type: "bit", nullable: false),
                     Descricao = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
