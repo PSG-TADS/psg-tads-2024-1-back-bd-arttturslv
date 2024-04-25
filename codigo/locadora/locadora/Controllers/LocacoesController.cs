@@ -58,6 +58,24 @@ namespace locadora.Controllers
             return locacoesAtivas;
         }
 
+        // GET: api/Locacoes/nao-ativas - Retorna todas as locações que estao não estao ativas
+        [HttpGet("nao-ativas")]
+        public async Task<ActionResult<IEnumerable<Locacao>>> GetLocacoesNaoAtivas()
+        {
+            var locacoes = _context.Locacao.ToListAsync();
+            var locacoesNaoAtivas = new List<Locacao>();
+
+            foreach (var locacao in await locacoes)
+            {
+                if (!locacao.Ativa)
+                {
+                    locacoesNaoAtivas.Add(locacao);
+                }
+            }
+            return locacoesNaoAtivas;
+        }
+
+
         // PUT: api/Locacoes/devolver/5 - Usado para devolver um veiculo
         [HttpPut("devolver/{id}")]
         public async Task<ActionResult<Locacao>> DevolverVeiculo(string id, DateTime dataDevolucao)
@@ -151,6 +169,8 @@ namespace locadora.Controllers
             locacao.Ativa = true; //o status é atualizado apos a devolucao
             locacao.Descricao = "A locacao foi feita para o cliente: " + clienteExistente.Nome + " com duração de " + (locacao.DataTermino.Subtract(locacao.DataInicio)).Days + " dias."; 
             veiculoExistente.Disponibilidade = false; //atualiza o veiculo, nao deixando ser usado.
+            
+            clienteExistente.Locacoes.Add(locacao);
 
             _context.Locacao.Add(locacao);
             try
@@ -192,7 +212,7 @@ namespace locadora.Controllers
             _context.Locacao.Remove(locacao);
             await _context.SaveChangesAsync();
 
-            return Ok("Cliente foi apagado, junto com todas as locações relacionadas a ele.");
+            return Ok("A locação foi apagada com sucesso.");
         }
 
         private bool LocacaoExists(string id)

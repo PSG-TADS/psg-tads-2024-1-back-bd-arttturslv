@@ -25,7 +25,7 @@ namespace locadora.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Cliente>>> GetCliente()
         {
-            return await _context.Cliente.ToListAsync();
+            return await _context.Cliente.Include(c => c.Locacoes).ToListAsync();
         }
 
         // GET: api/Clientes/5 - Retorna o cliente especifico ou NotFound
@@ -40,30 +40,6 @@ namespace locadora.Controllers
             }
 
             return cliente;
-        }
-
-        // GET: api/Clientes/atrasos - Retorna todos os clientes com locacoes em atraso.
-        [HttpGet("atrasos")]
-        public async Task<ActionResult<IEnumerable<Cliente>>> GetClientesAtrasados()
-        {
-            var clientes = _context.Cliente.ToListAsync();
-            var clientesAtrasados = new List<Cliente>();
-
-            foreach (var cliente in await clientes)
-            {
-                if(cliente.Locacoes != null )
-                {
-                    foreach (var locacao in cliente.Locacoes)
-                    {
-                        if ((locacao.DataInicio < locacao.DataDevolucao) && locacao.Ativa == true)
-                        {
-                            clientesAtrasados.Add(cliente);
-                            break;
-                        }
-                    }
-                }
-            }
-            return clientesAtrasados;
         }
 
         // PUT: api/Clientes/5 - Modifica clientes
@@ -90,6 +66,9 @@ namespace locadora.Controllers
                 return BadRequest("O nome é invalido. O nome não pode conter caracteres especiais.");
             }
 
+            var locacoesAnteriores = await _context.Locacao.Where(l => l.ClienteID == cliente.CPF).ToListAsync();
+            cliente.Locacoes = locacoesAnteriores;
+
             _context.Entry(cliente).State = EntityState.Modified;
 
             try
@@ -108,7 +87,7 @@ namespace locadora.Controllers
                 }
             }
 
-            return Ok("Cliente modificado.");
+            return Ok("Cliente modificado. Atenção, devido as regras de negocio, não é possivel modificar as locações pelo cliente.");
         }
 
         // POST: api/Clientes - Permite adicionar um novo cliente
@@ -117,8 +96,9 @@ namespace locadora.Controllers
         {
             cliente.CPF = formatarNumeros(cliente.CPF);
             cliente.Telefone = formatarNumeros(cliente.Telefone);
+            cliente.Locacoes = new List<Locacao>();
 
-            if(!CPFValido(cliente.CPF))
+            if (!CPFValido(cliente.CPF))
             {
                 return BadRequest("CPF invalido. Verifique a quantidade de algarismos.");
             }
@@ -152,7 +132,8 @@ namespace locadora.Controllers
                 }
             }
 
-            return CreatedAtAction("GetCliente", new { id = cliente.CPF }, cliente);
+            return CreatedAtAction("GetCliente", new { id = cliente.CPF }, $"Cliente criado com sucesso. Devido às regras de negócio, as locações foram salvas vazias e só poderão ser preenchidas no endpoint de alugar.\n\nDetalhes do Cliente:\nNome: {cliente.Nome}\nCPF: {cliente.CPF}\nEmail: {cliente.Email}\nTelefone: {cliente.Telefone}\nLocações: []");
+
         }
 
 
