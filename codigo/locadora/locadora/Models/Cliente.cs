@@ -10,7 +10,7 @@ namespace locadora.Models
         public string Nome { get; set; } 
         public string Telefone { get; set; }
         public string Email { get; set; }
-        public ICollection<Locacao>? Locacoes { get; set; } //Locacoes no nome do cliente
+        public ICollection<Locacao>? Locacoes { get; set; } = new List<Locacao>();
 
     }
 }

@@ -120,7 +120,7 @@ namespace locadora.Controllers
                 }
             }
 
-            return CreatedAtAction("GetVeiculo", new { id = veiculo.PlacaID }, veiculo);
+            return CreatedAtAction("GetVeiculo", new { id = veiculo.PlacaID }, "Veiculo adicionado. Devido regras de negocio, a disponibilidade do veiculo foi configurada para 'true'.");
         }
 
         // DELETE: api/Veiculos/5 - Permite deletar um veiculo
