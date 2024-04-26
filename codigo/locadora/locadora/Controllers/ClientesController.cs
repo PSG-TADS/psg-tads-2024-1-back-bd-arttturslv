@@ -32,7 +32,9 @@ namespace locadora.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Cliente>> GetCliente(string id)
         {
-            var cliente = await _context.Cliente.FindAsync(id);
+            var cliente = await _context.Cliente
+                .Include(c => c.Locacoes) // Carrega as locações junto com o cliente
+                .FirstOrDefaultAsync(c => c.CPF == id);
 
             if (cliente == null)
             {
