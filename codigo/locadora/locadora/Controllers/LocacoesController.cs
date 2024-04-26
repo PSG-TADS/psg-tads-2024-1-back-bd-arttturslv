@@ -114,7 +114,7 @@ namespace locadora.Controllers
             locacao.Custo = custoTotal;
             locacao.Ativa = false; //agora a locacao fica como concluida
 
-            locacao.Descricao += "O veiculo foi entregue com "+atraso+" dias de atraso e "+tempoPassado+" dias estipulados no contrato. O custo total é de R$"+custo+" pelos dias do contrato e mais R$"+custoAtraso+" pelo atraso, totalizando R$"+custoTotal;
+            locacao.Descricao += "O veiculo foi entregue com "+atraso+" dias de atraso e "+tempoPassado+" dias estipulados no contrato. O custo de R$"+custo+" pelos dias do contrato e mais R$"+custoAtraso+" pelo atraso, totalizando R$"+custoTotal;
             try
             {
                 await _context.SaveChangesAsync();
